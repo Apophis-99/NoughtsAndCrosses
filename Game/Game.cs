@@ -2,10 +2,14 @@
 
 public class Game
 {
-    private readonly List<List<SlotState>> _gridState;
+    private List<List<SlotState>> _gridState;
+    private bool _computerStarts;
+    private SlotState _playerPiece = SlotState.X;
+    private SlotState _computerPiece = SlotState.O;
 
     public Game()
     {
+        _computerStarts = false;
         _gridState = new List<List<SlotState>>
         {
             new List<SlotState>
@@ -27,38 +31,65 @@ public class Game
                 SlotState.Empty
             }
         };
+        
+        RequestPlayerPiece();
 
         while (true)
         {
-            if (PromptUser())
+            List<int> results;
+            if (_computerStarts)
             {
-                _gridState = new List<List<SlotState>>
+                ComputerPlay();
+                results = CheckBoard();
+                if (results[0] != (int) SlotState.Empty)
                 {
-                    new List<SlotState>
-                    {
-                        SlotState.Empty,
-                        SlotState.Empty,
-                        SlotState.Empty
-                    },
-                    new List<SlotState>
-                    {
-                        SlotState.Empty,
-                        SlotState.Empty,
-                        SlotState.Empty
-                    },
-                    new List<SlotState>
-                    {
-                        SlotState.Empty,
-                        SlotState.Empty,
-                        SlotState.Empty
-                    }
-                };
-                Console.Write("Would you like to play again? (y/n) ");
-                var result = Console.ReadLine();
-                if (result is not { Length: > 0 }) break;
-                if (result.ToLower()[0] == 'y')
+                    if (OutputResults(results))
+                        continue;
                     break;
+                }
             }
+            
+            DrawGrid();
+            PromptUser();
+            results = CheckBoard();
+            if (results[0] == (int)SlotState.Empty)
+            {
+                if (!_computerStarts)
+                {
+                    ComputerPlay();
+                    results = CheckBoard();
+                    if (results[0] != (int)SlotState.Empty)
+                    {
+                        if (!OutputResults(results))
+                            break;
+                    }
+                }
+                continue;
+            }
+
+            if (!OutputResults(results))
+                break;
+        }
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    private void RequestPlayerPiece()
+    {
+        Console.Write("Would you like to play X or O? (X by default) ");
+        var result = Console.ReadLine();
+        if (result is not { Length: > 0 }) return;
+        switch (result.ToLower()[0])
+        {
+            case 'o':
+                _playerPiece = SlotState.O;
+                _computerPiece = SlotState.X;
+                break;
+            default:
+                _playerPiece = SlotState.X;
+                _computerPiece = SlotState.O;
+                break;
         }
     }
 
@@ -85,10 +116,10 @@ public class Game
     /// <param name="x1"></param>
     /// <param name="x2"></param>
     /// <param name="x3"></param>
-    private void DrawWinGrid(string winner, int x1, int x2, int x3)
+    private static void DrawWinGrid(string winner, int x1, int x2, int x3)
     {
-        List<List<SlotState>> output = new List<List<SlotState>> 
-            { new List<SlotState> { 0, 0, 0 }, new List<SlotState> { 0, 0, 0 }, new List<SlotState> { 0, 0, 0 } };
+        var output = new List<List<SlotState>> 
+            { new() { 0, 0, 0 }, new() { 0, 0, 0 }, new() { 0, 0, 0 } };
         output[(x1 - 1) / 3][(x1 - 1) % 3] = SlotState.X;
         output[(x2 - 1) / 3][(x2 - 1) % 3] = SlotState.X;
         output[(x3 - 1) / 3][(x3 - 1) % 3] = SlotState.X;
@@ -110,12 +141,11 @@ public class Game
     /// <summary>
     /// Prompts user to enter a number between 1 - 9 relating to a slot within the grid.
     /// Checks whether slot is available:
-    /// TRUE - Adds player piece (X) to board;
+    /// TRUE - Adds player piece to board;
     /// FALSE - Re-prompts user to enter number as slot is occupied
     /// </summary>
-    private bool PromptUser(string message = "")
+    private void PromptUser(string message = "")
     {
-        DrawGrid();
         Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine(message);
         Console.ForegroundColor = ConsoleColor.White;
@@ -129,35 +159,43 @@ public class Game
         }
         catch (FormatException)
         {
+            DrawGrid();
             PromptUser("Must enter a number!");
-            return false;
+            return;
         }
         catch (IndexOutOfRangeException)
         {
+            DrawGrid();
             PromptUser("Number must be between 1 & 9");
-            return false;
+            return;
+        }
+        catch (OverflowException)
+        {
+            DrawGrid();
+            PromptUser("Number must be between 1 & 9");
+            return;
         }
 
         if (_gridState[(value - 1) / 3][(value - 1) % 3] == SlotState.Empty)
         {
-            _gridState[(value - 1) / 3][(value - 1) % 3] = SlotState.X;
+            _gridState[(value - 1) / 3][(value - 1) % 3] = _playerPiece;
+            return;
         }
+        DrawGrid();
+        PromptUser("Space already taken! Choose another...");
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    private void ComputerPlay()
+    {
+        var random = new Random();
+        var rand = random.Next() % 9 + 1;
+        if (_gridState[(rand - 1) / 3][(rand - 1) % 3] == SlotState.Empty)
+            _gridState[(rand - 1) / 3][(rand - 1) % 3] = _computerPiece;
         else
-        {
-            PromptUser("Space already taken! Choose another...");
-            return false;
-        }
-
-        var results = CheckBoard();
-        if (results[0] == (int)SlotState.Empty)
-            return false;
-        DrawWinGrid(((SlotState) results[0]).ToString(), results[1], results[2], results[3]);
-
-        Console.ForegroundColor = ConsoleColor.Green;
-        Console.WriteLine($"{ (SlotState) results[0] } Wins!");
-        Console.ForegroundColor = ConsoleColor.White;
-
-        return true;
+            ComputerPlay();
     }
     
     /// <summary>
@@ -202,6 +240,66 @@ public class Game
         if (_gridState[0][2] == SlotState.O && _gridState[1][1] == SlotState.O && _gridState[2][0] == SlotState.O)
             return new List<int> { (int) SlotState.O, 3, 5, 7 };
 
-        return new List<int> { (int) SlotState.Empty, 0, 0, 0 };
+        var count = 0;
+        foreach (var t in _gridState)
+            foreach (var t1 in t)
+                if (t1 != SlotState.Empty)
+                    count++;
+
+        return count == 9 ? new List<int>{ -1, 0, 0, 0 } : new List<int> { (int) SlotState.Empty, 0, 0, 0 };
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="results"></param>
+    /// <returns></returns>
+    private bool OutputResults(List<int> results)
+    {
+        if (results[0] > 0)
+        {
+            DrawWinGrid(((SlotState) results[0]).ToString(), results[1], results[2], results[3]);
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"{(SlotState)results[0]} Wins!");
+            Console.ForegroundColor = ConsoleColor.White;
+        }
+        else
+        {
+            DrawGrid();
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("Draw!");
+            Console.ForegroundColor = ConsoleColor.White;
+        }
+
+        if (results[0] == (int) _playerPiece)
+            _computerStarts = true;
+        else if (results[0] == (int)_computerPiece)
+            _computerStarts = false;
+
+        _gridState = new List<List<SlotState>>
+        {
+            new List<SlotState>
+            {
+                SlotState.Empty,
+                SlotState.Empty,
+                SlotState.Empty
+            },
+            new List<SlotState>
+            {
+                SlotState.Empty,
+                SlotState.Empty,
+                SlotState.Empty
+            },
+            new List<SlotState>
+            {
+                SlotState.Empty,
+                SlotState.Empty,
+                SlotState.Empty
+            }
+        };
+        Console.Write("Would you like to play again? (y/n) ");
+        var result = Console.ReadLine();
+        if (result is not { Length: > 0 }) return false;
+        return result.ToLower()[0] == 'y';
     }
 }
