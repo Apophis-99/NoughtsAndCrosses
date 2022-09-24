@@ -2,6 +2,8 @@
 
 public class Game
 {
+    private ComputerAi _computerAi;
+    
     private List<List<SlotState>> _gridState;
     private bool _computerStarts;
     private SlotState _playerPiece = SlotState.X;
@@ -33,6 +35,7 @@ public class Game
         };
         
         RequestPlayerPiece();
+        _computerAi = new ComputerAi(_playerPiece);
 
         while (true)
         {
@@ -190,12 +193,8 @@ public class Game
     /// </summary>
     private void ComputerPlay()
     {
-        var random = new Random();
-        var rand = random.Next() % 9 + 1;
-        if (_gridState[(rand - 1) / 3][(rand - 1) % 3] == SlotState.Empty)
-            _gridState[(rand - 1) / 3][(rand - 1) % 3] = _computerPiece;
-        else
-            ComputerPlay();
+        var num = _computerAi.CalculateNextMove(_gridState);
+        _gridState[(num - 1) / 3][(num - 1) % 3] = _computerPiece;
     }
     
     /// <summary>
