@@ -81,7 +81,7 @@ public struct GameData
 
     public override string ToString()
     {
-        var orderStr = Order[0].Aggregate(" ", (current, val) => current + (val + " "));
+        var orderStr = Order[0].Aggregate(" ", (current, num) => current + (num + " "));
         return Starter + orderStr + Winner;
     }
 }

@@ -72,7 +72,7 @@ public class Game
         Console.Write(prompt);
 
         var temp = Console.ReadLine();
-        if (temp == null)
+        if (string.IsNullOrEmpty(temp))
             return GetLetterInput(prompt, validChars, new ConsoleMessage("Must enter a letter!", Message.Danger));
         if (temp.Length > 1)
             return GetLetterInput(prompt, validChars, new ConsoleMessage("Too many letters were entered", Message.Warning)); 
@@ -208,6 +208,8 @@ public class Game
     /// <returns>TRUE - play another game; FALSE - close game</returns>
     private bool OutputResults()
     {
+        _computerAi.SubmitGame(new GameData(Convert.ToInt16(_player1Starts), _grid.Order, _boardResults[0] - 1));
+        
         if (_boardResults[0] > (int) SlotState.Draw)
         {
             _grid.DrawWinningGrid((SlotState) _boardResults[0], _boardResults[1], _boardResults[2], _boardResults[3]);
@@ -230,9 +232,7 @@ public class Game
             _player1Starts = false;
         else if (_boardResults[0] == (int)_player2Piece)
             _player1Starts = true;
-        
-        _computerAi.SubmitGame(new GameData(Convert.ToInt16(_player1Starts), _grid.Order, _boardResults[0] - 1));
-        
+
         _grid.ResetGrid();
 
         return GetLetterInput("Would you like to play again? (y/n) ", "yn") == 'y';

@@ -2,140 +2,101 @@
 
 public class ComputerAi
 {
-    private List<List<SlotState>> _boardState = new();
-    private readonly SlotState _playerPiece;
-    private readonly SlotState _computerPiece;
+    private Grid _grid = new();
+    private SlotState _playerPiece; // The piece that is not the AI
+    private SlotState _computerPiece; // The piece that the AI is playing as on that particular move
 
-    public ComputerAi(SlotState playerPiece)
+    private readonly GamePredictor _predictor;
+
+    public ComputerAi()
     {
-        _playerPiece = playerPiece;
-        _computerPiece = (_playerPiece == SlotState.X ? SlotState.O : SlotState.X);
+        _predictor = new GamePredictor();
     }
-    
-    public int CalculateNextMove(List<List<SlotState>> boardState)
-    {
-        _boardState = boardState;
 
-        if (IsFirstTurn())
-            return GetRandom();
+    public int Calculate(Grid grid, SlotState piece)
+    {
+        _grid = grid;
+        _computerPiece = piece;
+        _playerPiece = _computerPiece == SlotState.X ? SlotState.O : SlotState.X;
+
+        var index = GetPlayerBlock();
+        if (index > 0)
+            return index;
+        index = GetWinningMove();
+        if (index > 0)
+            return index;
+        index = _predictor.Calculate();
+        if (index > 0)
+            return index;
         
-        var result = GetWinningMove();
-        if (result > 0)
-            return result;
-        
-        result = GetPlayerBlock();
-        return result > 0 ? result : GetRandom();
-    }
-
-    private bool IsFirstTurn()
-    {
-        var count = _boardState.SelectMany(t => t).Count(t1 => t1 == SlotState.Empty);
-        return (count == 9);
-    }
-
-    private int GetRandom()
-    {
-        var rand = new Random().Next() % 9 + 1;
-        return _boardState[(rand - 1) / 3][(rand - 1) % 3] != SlotState.Empty ? GetRandom() : rand;
+        return 1;
     }
 
     private int GetPlayerBlock()
     {
+        // TODO GetPlayerBlock - make efficient board checks
+
         for (var i = 0; i < 3; i++)
         {
-            if (_boardState[i][0] == _playerPiece && _boardState[i][1] == _playerPiece && _boardState[i][2] == SlotState.Empty)
-                return i * 3 + 1 + 2;
-            if (_boardState[i][0] == _playerPiece && _boardState[i][2] == _playerPiece && _boardState[i][1] == SlotState.Empty)
-                return i * 3 + 1 + 1;
-            if (_boardState[i][1] == _playerPiece && _boardState[i][2] == _playerPiece && _boardState[i][0] == SlotState.Empty)
-                return i * 3 + 1 + 0;
-                
-            if (_boardState[0][i] == _playerPiece && _boardState[1][i] == _playerPiece && _boardState[2][i] == SlotState.Empty)
-                return 2 * 3 + 1 + i;
-            if (_boardState[0][i] == _playerPiece && _boardState[2][i] == _playerPiece && _boardState[1][i] == SlotState.Empty)
-                return 1 * 3 + 1 + i;
-            if (_boardState[1][i] == _playerPiece && _boardState[2][i] == _playerPiece && _boardState[0][i] == SlotState.Empty)
-                return 0 * 3 + 1 + i;
+            for (var j = 0; j < 3; j++)
+            {
+                if (_grid.GetSlot((j + 1) + j switch
+                    {
+                        0 => 1,
+                        1 => -1,
+                        _ => -2
+                    } + 3 * i) == _playerPiece && 
+                    _grid.GetSlot((j + 1) + j switch
+                    {
+                        0 => 2,
+                        1 => 1,
+                        _ => -1
+                    } + 3 * i) == _playerPiece && 
+                    !_grid.Populated((j + 1) + 3 * i ))
+                    return (j + 1) + 3 * i;
+
+                if (_grid.GetSlot((j * 3 + 1) + j switch
+                        {
+                            0 => 3,
+                            1 => -3,
+                            _ => -6
+                        } + i) == _playerPiece &&
+                    _grid.GetSlot((j * 3 + 1) + j switch
+                    {
+                        0 => 6,
+                        1 => 3,
+                        _ => -3
+                    } + i) == _playerPiece &&
+                    !_grid.Populated((j * 3 + 1) + i))
+                    return (j * 3 + 1) + i;
+            }
+
+            for (var j = 1; j <= 2; j++)
+            {
+                if (_grid.GetSlot(0) == _playerPiece &&
+                    _grid.GetSlot(0) == _playerPiece &&
+                    !_grid.Populated(0))
+                    return 0;
+            }
         }
         
-        if (_boardState[0][0] == _playerPiece && _boardState[1][1] == _playerPiece && _boardState[2][2] == SlotState.Empty)
-            return 9;
-        if (_boardState[0][0] == _playerPiece && _boardState[2][2] == _playerPiece && _boardState[1][1] == SlotState.Empty)
-            return 5;
-        if (_boardState[1][1] == _playerPiece && _boardState[2][2] == _playerPiece && _boardState[0][0] == SlotState.Empty)
-            return 1;
-        
-        if (_boardState[0][2] == _playerPiece && _boardState[1][1] == _playerPiece && _boardState[2][0] == SlotState.Empty)
-            return 7;
-        if (_boardState[0][2] == _playerPiece && _boardState[2][0] == _playerPiece && _boardState[1][1] == SlotState.Empty)
-            return 5;
-        if (_boardState[2][0] == _playerPiece && _boardState[1][1] == _playerPiece && _boardState[0][2] == SlotState.Empty)
-            return 3;
-
         return 0;
     }
 
     private int GetWinningMove()
     {
-        // Horizontal
-        if (_boardState[0][0] == _computerPiece && _boardState[0][1] == _computerPiece && _boardState[0][2] == SlotState.Empty)
-            return 3;
-        if (_boardState[0][1] == _computerPiece && _boardState[0][2] == _computerPiece && _boardState[0][0] == SlotState.Empty)
-            return 1;
-        if (_boardState[0][0] == _computerPiece && _boardState[0][2] == _computerPiece && _boardState[0][1] == SlotState.Empty)
-            return 2;
+        // TODO GetWinningMove - make efficient board checks
         
-        if (_boardState[1][0] == _computerPiece && _boardState[1][1] == _computerPiece && _boardState[1][2] == SlotState.Empty)
-            return 6;
-        if (_boardState[1][1] == _computerPiece && _boardState[1][2] == _computerPiece && _boardState[1][0] == SlotState.Empty)
-            return 4;
-        if (_boardState[1][0] == _computerPiece && _boardState[1][2] == _computerPiece && _boardState[1][1] == SlotState.Empty)
-            return 5;
-        
-        if (_boardState[2][0] == _computerPiece && _boardState[2][1] == _computerPiece && _boardState[2][2] == SlotState.Empty)
-            return 9;
-        if (_boardState[2][1] == _computerPiece && _boardState[2][2] == _computerPiece && _boardState[2][0] == SlotState.Empty)
-            return 7;
-        if (_boardState[2][0] == _computerPiece && _boardState[2][2] == _computerPiece && _boardState[2][1] == SlotState.Empty)
-            return 8;
-        
-        // Vertical
-        if (_boardState[0][0] == _computerPiece && _boardState[1][0] == _computerPiece && _boardState[2][0] == SlotState.Empty)
-            return 7;
-        if (_boardState[1][0] == _computerPiece && _boardState[2][0] == _computerPiece && _boardState[0][0] == SlotState.Empty)
-            return 1;
-        if (_boardState[0][0] == _computerPiece && _boardState[2][0] == _computerPiece && _boardState[1][0] == SlotState.Empty)
-            return 4;
-        
-        if (_boardState[0][1] == _computerPiece && _boardState[1][1] == _computerPiece && _boardState[2][1] == SlotState.Empty)
-            return 8;
-        if (_boardState[1][1] == _computerPiece && _boardState[2][1] == _computerPiece && _boardState[0][1] == SlotState.Empty)
-            return 2;
-        if (_boardState[0][1] == _computerPiece && _boardState[2][1] == _computerPiece && _boardState[1][1] == SlotState.Empty)
-            return 5;
-        
-        if (_boardState[0][2] == _computerPiece && _boardState[1][2] == _computerPiece && _boardState[2][2] == SlotState.Empty)
-            return 9;
-        if (_boardState[1][2] == _computerPiece && _boardState[1][2] == _computerPiece && _boardState[2][2] == SlotState.Empty)
-            return 3;
-        if (_boardState[0][2] == _computerPiece && _boardState[1][2] == _computerPiece && _boardState[2][2] == SlotState.Empty)
-            return 6;
-        
-        // Diagonal
-        if (_boardState[0][0] == _computerPiece && _boardState[1][1] == _computerPiece && _boardState[2][2] == SlotState.Empty)
-            return 9;
-        if (_boardState[1][1] == _computerPiece && _boardState[2][2] == _computerPiece && _boardState[0][0] == SlotState.Empty)
-            return 1;
-        if (_boardState[0][0] == _computerPiece && _boardState[2][2] == _computerPiece && _boardState[1][1] == SlotState.Empty)
-            return 5;
-        
-        if (_boardState[0][2] == _computerPiece && _boardState[1][1] == _computerPiece && _boardState[2][0] == SlotState.Empty)
-            return 7;
-        if (_boardState[1][1] == _computerPiece && _boardState[2][0] == _computerPiece && _boardState[0][2] == SlotState.Empty)
-            return 3;
-        if (_boardState[0][2] == _computerPiece && _boardState[2][0] == _computerPiece && _boardState[1][1] == SlotState.Empty)
-            return 5;
-
         return 0;
     }
+
+    public void SubmitGame(GameData data)
+    {
+        _predictor.Games.Add(data);
+
+        var file = File.AppendText("../../../Game/ComputerAI/SavedGames.txt");
+        file.WriteLine(data.ToString());
+        file.Close();
+    }
+
 }

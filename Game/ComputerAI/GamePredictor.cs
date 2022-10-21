@@ -2,17 +2,24 @@
 
 public class GamePredictor
 {
-    private readonly List<GameData> _games;
+    public readonly List<GameData> Games;
     
     public GamePredictor()
     {
-        _games = new List<GameData>();
+        Games = new List<GameData>();
         ManageData();
+    }
+
+    public int Calculate()
+    {
+        // TODO GamePredictor.Calculate - index each game and check for viable data
+        
+        return 0;
     }
     
     private void ManageData()
     {
-        var lines = File.ReadAllLines("../../Game/ComputerAI/SavedGames.txt");
+        var lines = File.ReadAllLines("../../../Game/ComputerAI/SavedGames.txt");
 
         var temp = new List<string>(lines)
         { Capacity = 20 }; // Limit number of games that can be imported
@@ -20,7 +27,8 @@ public class GamePredictor
 
         foreach (var line in lines)
         {
-            _games.Add(new GameData().Format(line));
+            Games.Add(new GameData().Format(line));
         }
     }
+    
 }
