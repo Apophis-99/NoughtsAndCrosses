@@ -3,10 +3,12 @@
 public class Grid
 {
     private List<List<SlotState>> _grid;
+    public List<int> Order;
 
     public Grid()
     {
         _grid = new List<List<SlotState>>();
+        Order = new List<int>();
         ResetGrid();
     }
 
@@ -17,13 +19,13 @@ public class Grid
     {
         Console.Clear();
         Console.WriteLine(
-            $" {(_grid[0][0] == SlotState.Empty ? " " : _grid[0][0])} | {(_grid[0][1] == SlotState.Empty ? " " : _grid[0][1])} | {(_grid[0][2] == SlotState.Empty ? " " : _grid[0][2])} ");
+            $" {(GetSlot(1) == SlotState.Empty ? " " : GetSlot(1))} | {(GetSlot(2) == SlotState.Empty ? " " : GetSlot(2))} | {(GetSlot(3) == SlotState.Empty ? " " : GetSlot(3))} ");
         Console.WriteLine("---|---|---");
         Console.WriteLine(
-            $" {(_grid[1][0] == SlotState.Empty ? " " : _grid[1][0])} | {(_grid[1][1] == SlotState.Empty ? " " : _grid[1][1])} | {(_grid[1][2] == SlotState.Empty ? " " : _grid[1][2])} ");
+            $" {(GetSlot(4) == SlotState.Empty ? " " : GetSlot(4))} | {(GetSlot(5) == SlotState.Empty ? " " : GetSlot(5))} | {(GetSlot(6) == SlotState.Empty ? " " : GetSlot(6))} ");
         Console.WriteLine("---|---|---");
         Console.WriteLine(
-            $" {(_grid[2][0] == SlotState.Empty ? " " : _grid[2][0])} | {(_grid[2][1] == SlotState.Empty ? " " : _grid[2][1])} | {(_grid[2][2] == SlotState.Empty ? " " : _grid[2][2])} ");
+            $" {(GetSlot(7) == SlotState.Empty ? " " : GetSlot(7))} | {(GetSlot(8) == SlotState.Empty ? " " : GetSlot(8))} | {(GetSlot(9) == SlotState.Empty ? " " : GetSlot(9))} ");
     }
 
     /// <summary>
@@ -55,10 +57,10 @@ public class Grid
             if (GetSlot(2 + 3 * i) == SlotState.O && GetSlot((2 - 1) + 3 * i) == SlotState.O && GetSlot((2 + 1) + 3 * i) == SlotState.O)
                 return new List<int> { (int) SlotState.O, (2 - 1) + 3 * i, 2 + 3 * i, (2 + 1) + 3 * i };
             
-            if (GetSlot(5 + 3 * i) == SlotState.X && GetSlot((5 - 3) + 3 * i) == SlotState.X && GetSlot((5 + 3) + 3 * i) == SlotState.X)
-                return new List<int> { (int) SlotState.X, (5 - 1) + 3 * i, 5 + 3 * i, (5 + 1) + 3 * i };
-            if (GetSlot(5 + 3 * i) == SlotState.O && GetSlot((5 - 3) + 3 * i) == SlotState.O && GetSlot((5 + 3) + 3 * i) == SlotState.O)
-                return new List<int> { (int) SlotState.O, (5 - 1) + 3 * i, 5 + 3 * i, (5 + 1) + 3 * i };
+            if (GetSlot(4 + i) == SlotState.X && GetSlot((4 + i) - 3) == SlotState.X && GetSlot((4 + i) + 3) == SlotState.X)
+                return new List<int> { (int) SlotState.X, (4 + i) - 3, 4 + i, (4 + i) + 3 };
+            if (GetSlot(4 + i) == SlotState.O && GetSlot((4 + i) - 3) == SlotState.O && GetSlot((4 + i) + 3) == SlotState.O)
+                return new List<int> { (int) SlotState.O, (4 + i) - 3, 4 + i, (4 + i) + 3 };
         }
 
         for (var i = 1; i <= 2; i++)
@@ -98,7 +100,18 @@ public class Grid
         if (temp != SlotState.Empty)
             return false;
         _grid[(index - 1) % 3][(index - 1) / 3] = piece;
+        Order.Add(index);
         return true;
+    }
+
+    /// <summary>
+    /// Checks whether a particular grid slot is occupied by either player
+    /// </summary>
+    /// <param name="index">The index to check</param>
+    /// <returns>TRUE - it is being used by X or O; FALSE - it is empty</returns>
+    public bool Populated(int index)
+    {
+        return GetSlot(index) != SlotState.Empty;
     }
 
     /// <summary>
@@ -112,5 +125,6 @@ public class Grid
             new() { SlotState.Empty, SlotState.Empty, SlotState.Empty },
             new() { SlotState.Empty, SlotState.Empty, SlotState.Empty }
         };
+        Order = new List<int>();
     }
 }
