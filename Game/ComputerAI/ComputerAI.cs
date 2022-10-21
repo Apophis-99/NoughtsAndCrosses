@@ -1,4 +1,4 @@
-﻿namespace NoughtsAndCrosses.Game;
+﻿namespace NoughtsAndCrosses.Game.ComputerAI;
 
 public class ComputerAi
 {
@@ -24,19 +24,12 @@ public class ComputerAi
             return result;
         
         result = GetPlayerBlock();
-        if (result > 0)
-            return result;
-
-        return GetRandom();
+        return result > 0 ? result : GetRandom();
     }
 
     private bool IsFirstTurn()
     {
-        var count = 0;
-        foreach (var t in _boardState)
-            foreach (var t1 in t)
-                if (t1 == SlotState.Empty)
-                    count++;
+        var count = _boardState.SelectMany(t => t).Count(t1 => t1 == SlotState.Empty);
         return (count == 9);
     }
 
@@ -88,7 +81,7 @@ public class ComputerAi
         if (_boardState[0][0] == _computerPiece && _boardState[0][1] == _computerPiece && _boardState[0][2] == SlotState.Empty)
             return 3;
         if (_boardState[0][1] == _computerPiece && _boardState[0][2] == _computerPiece && _boardState[0][0] == SlotState.Empty)
-            return 0;
+            return 1;
         if (_boardState[0][0] == _computerPiece && _boardState[0][2] == _computerPiece && _boardState[0][1] == SlotState.Empty)
             return 2;
         
